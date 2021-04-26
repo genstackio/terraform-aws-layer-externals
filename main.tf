@@ -1,16 +1,16 @@
 resource "aws_iam_role" "account-roles" {
-  for_each = var.accounts
-  name_prefix = "externals-${each.value.type}-"
+  for_each           = local.accounts
+  name_prefix        = "externals-${lookup(each.value, "type")}-"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17",
+    Version   = "2012-10-17",
     Statement = [
       {
         Effect    = "Allow",
         Action    = "sts:AssumeRole",
-        Principal = { "AWS" : "arn:aws:iam::${each.value.id}:root" }
-        Condition = (each.value.external_id != null) ? {
+        Principal = { "AWS" : "arn:aws:iam::${lookup(each.value, "id")}:root" }
+        Condition = (lookup(each.value, "external_id", null) != null) ? {
           StringEquals = {
-            "sts:ExternalId" = each.value.external_id
+            "sts:ExternalId" = lookup(each.value, "external_id")
           }
         } : null
       }]
@@ -18,7 +18,7 @@ resource "aws_iam_role" "account-roles" {
 }
 
 resource "aws_iam_role_policy_attachment" "account-roles" {
-  for_each = var.accounts
+  for_each   = local.accounts
   role       = aws_iam_role.account-roles[each.key].name
-  policy_arn = each.value.policy
+  policy_arn = lookup(each.value, "policy")
 }
